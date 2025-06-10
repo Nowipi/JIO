@@ -5,8 +5,7 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 public class Termios {
 
@@ -19,9 +18,6 @@ public class Termios {
                 JAVA_INT.withName("c_cflag"),
                 JAVA_INT.withName("c_lflag"),
                 JAVA_BYTE.withName("c_line"),
-                // Padding byte after c_line to align c_cc array properly
-                MemoryLayout.paddingLayout(3 * 8), // ensure correct alignment (optional, depends on platform)
-
                 MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("c_cc")
         ).withName("termios");
     }
@@ -36,5 +32,21 @@ public class Termios {
 
     public static int c_cflag(MemorySegment termios) {
         return termios.get(JAVA_INT, layout.byteOffset(MemoryLayout.PathElement.groupElement("c_cflag")));
+    }
+
+    public static void c_lflag(MemorySegment termios, int v) {
+        termios.set(JAVA_INT, layout.byteOffset(MemoryLayout.PathElement.groupElement("c_lflag")), v);
+    }
+
+    public static void c_iflag(MemorySegment termios, int v) {
+        termios.set(JAVA_INT, layout.byteOffset(MemoryLayout.PathElement.groupElement("c_iflag")), v);
+    }
+
+    public static void c_oflag(MemorySegment termios, int v) {
+        termios.set(JAVA_INT, layout.byteOffset(MemoryLayout.PathElement.groupElement("c_oflag")), v);
+    }
+
+    public static void c_cc(MemorySegment termios, int offset, byte v) {
+        termios.set(JAVA_BYTE, layout.byteOffset(MemoryLayout.PathElement.groupElement("c_cc")) + offset, v);
     }
 }
