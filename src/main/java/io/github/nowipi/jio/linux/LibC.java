@@ -7,7 +7,7 @@ import java.lang.invoke.VarHandle;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LibC {
+final class LibC {
 
     public static final int O_RDWR = 2;
     public static final int CS5 = 0x00000000;
@@ -38,6 +38,9 @@ public class LibC {
         errnoHandle = capturedStateLayout.varHandle(MemoryLayout.PathElement.groupElement("errno"));
         lookup = Linker.nativeLinker().defaultLookup();
         loadedMethodHandles = new HashMap<>();
+    }
+
+    private LibC() {
     }
 
     private static final FunctionDescriptor openDescriptor = FunctionDescriptor.of(C.INT,

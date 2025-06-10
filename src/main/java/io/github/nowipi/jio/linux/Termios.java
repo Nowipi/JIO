@@ -7,7 +7,7 @@ import java.lang.foreign.SegmentAllocator;
 
 import static java.lang.foreign.ValueLayout.*;
 
-public class Termios {
+final class Termios {
 
     public static final GroupLayout layout;
 
@@ -20,6 +20,9 @@ public class Termios {
                 JAVA_BYTE.withName("c_line"),
                 MemoryLayout.sequenceLayout(32, JAVA_BYTE).withName("c_cc")
         ).withName("termios");
+    }
+
+    private Termios() {
     }
 
     public static MemorySegment allocate(SegmentAllocator allocator) {

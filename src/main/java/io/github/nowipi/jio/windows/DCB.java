@@ -2,7 +2,7 @@ package io.github.nowipi.jio.windows;
 
 import java.lang.foreign.*;
 
-public final class DCB {
+final class DCB {
 
     public static final GroupLayout layout;
 
@@ -24,6 +24,9 @@ public final class DCB {
                 Win32.CHAR.withName("EvtChar"),      // CHAR
                 Win32.WORD.withName("wReserved1")   // WORD
         ).withName("DCB");
+    }
+
+    private DCB() {
     }
 
     public static MemorySegment allocate(SegmentAllocator allocator) {

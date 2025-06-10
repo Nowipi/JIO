@@ -4,7 +4,7 @@ import java.lang.foreign.*;
 
 import static java.lang.foreign.ValueLayout.*;
 
-public final class Win32 {
+final class Win32 {
 
     public static final Arena arena = Arena.global();
     // Primitive base aliases
@@ -71,4 +71,7 @@ public final class Win32 {
     public static final OfLong INT_PTR   = JAVA_LONG.withName("INT_PTR");    // signed pointer-sized
     public static final OfLong UINT_PTR  = JAVA_LONG.withName("UINT_PTR");   // unsigned pointer-sized
     public static final OfLong ULONG_PTR = JAVA_LONG.withName("ULONG_PTR");  // unsigned pointer-sized
+
+    private Win32() {
+    }
 }

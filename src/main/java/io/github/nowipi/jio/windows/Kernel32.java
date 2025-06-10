@@ -8,7 +8,7 @@ import java.lang.invoke.MethodHandle;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class Kernel32 {
+final class Kernel32 {
 
     public static final SymbolLookup lookup;
 
@@ -23,6 +23,9 @@ public final class Kernel32 {
     static {
         lookup = SymbolLookup.libraryLookup(System.mapLibraryName("kernel32"), Win32.arena);
         loadedMethodHandles = new HashMap<>();
+    }
+
+    private Kernel32() {
     }
 
     private static final FunctionDescriptor createFileWDescriptor = FunctionDescriptor.of(Win32.HANDLE,
