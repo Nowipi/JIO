@@ -14,12 +14,13 @@ import static io.github.nowipi.jio.windows.Kernel32.*;
 public final class SerialWindowsChannel implements SerialChannel {
 
     private final MemorySegment hSerial;
+    private static final Kernel32 kernel32 = new Kernel32Impl();
 
     public SerialWindowsChannel(String portName, int baudRate, byte wordSizeInBits) throws IOException {
         portName = portName.startsWith("\\\\.\\") ? portName : "\\\\.\\" + portName;
 
         try(var arena = Arena.ofConfined()) {
-            hSerial = Kernel32.createFileW(
+            hSerial = kernel32.createFileW(
                     arena.allocateFrom(portName, StandardCharsets.UTF_16LE),
                     GENERIC_READ | GENERIC_WRITE,
                     0,
@@ -35,7 +36,7 @@ public final class SerialWindowsChannel implements SerialChannel {
 
             MemorySegment dcbSerialParams = DCB.allocate(arena);
             DCB.setDCBlength(dcbSerialParams, (int) dcbSerialParams.byteSize());
-            if (Kernel32.getCommState(hSerial, dcbSerialParams) == 0) {
+            if (kernel32.getCommState(hSerial, dcbSerialParams) == 0) {
                 throw new IOException("Failed to get current serial parameters!");
             }
 
@@ -44,7 +45,7 @@ public final class SerialWindowsChannel implements SerialChannel {
             DCB.setStopBits(dcbSerialParams, ONESTOPBIT);
             DCB.setParity(dcbSerialParams, NOPARITY);
 
-            if (Kernel32.setCommState(hSerial, dcbSerialParams) == 0) {
+            if (kernel32.setCommState(hSerial, dcbSerialParams) == 0) {
                 throw new IOException("Could not set Serial Port parameters");
             }
         }
@@ -56,7 +57,7 @@ public final class SerialWindowsChannel implements SerialChannel {
 
         try(Arena arena = Arena.ofConfined()) {
             MemorySegment bytesRead = arena.allocate(Win32.DWORD);
-            if (Kernel32.readFile(hSerial, segment, dst.remaining(), bytesRead, MemorySegment.NULL) == 0) {
+            if (kernel32.readFile(hSerial, segment, dst.remaining(), bytesRead, MemorySegment.NULL) == 0) {
                 throw new IOException("Failed to read from serial port!");
             }
 
@@ -72,7 +73,7 @@ public final class SerialWindowsChannel implements SerialChannel {
 
         try(Arena arena = Arena.ofConfined()) {
             MemorySegment bytesWritten = arena.allocate(Win32.DWORD);
-            if (Kernel32.writeFile(hSerial, segment, src.remaining(), bytesWritten, MemorySegment.NULL) == 0) {
+            if (kernel32.writeFile(hSerial, segment, src.remaining(), bytesWritten, MemorySegment.NULL) == 0) {
                 throw new IOException("Failed to write to serial port!");
             }
             return bytesWritten.get(Win32.DWORD, 0);
@@ -86,6 +87,6 @@ public final class SerialWindowsChannel implements SerialChannel {
 
     @Override
     public void close() {
-        Kernel32.closeHandle(hSerial);
+        kernel32.closeHandle(hSerial);
     }
 }

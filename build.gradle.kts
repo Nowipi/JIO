@@ -1,13 +1,19 @@
 import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
-    id("java")
+    id("java-library")
     id("signing")
     id("com.vanniktech.maven.publish") version "0.32.0"
 }
 
 group = "io.github.nowipi"
 version = "1.0.1"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24)
+    }
+}
 
 signing {
     useInMemoryPgpKeys(
@@ -49,4 +55,14 @@ mavenPublishing {
             developerConnection.set("scm:git:ssh://git@github.com/Nowipi/jio.git")
         }
     }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    implementation("io.github.nowipi:ffmprocessor:1.0-SNAPSHOT")
+    annotationProcessor("io.github.nowipi:ffmprocessor:1.0-SNAPSHOT")
 }

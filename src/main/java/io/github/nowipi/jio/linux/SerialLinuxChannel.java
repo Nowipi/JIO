@@ -15,18 +15,20 @@ import static io.github.nowipi.jio.linux.LibC.*;
 public class SerialLinuxChannel implements SerialChannel {
 
     private final int fd;
+    private static final LibC libC = new LibCImpl();
 
     public SerialLinuxChannel(String portName, byte wordSizeInBits) throws IOException {
 
         try(var arena = Arena.ofConfined()) {
 
-            fd = open(arena.allocateFrom(portName, StandardCharsets.US_ASCII), O_RDWR);
+            fd = libC.open(arena.allocateFrom(portName, StandardCharsets.US_ASCII), O_RDWR);
             if (fd < 0) {
-                throw new IOException("Failed to open port " + portName);
+                MemorySegment errorMessage = libC.strerror(libC.errno());
+                throw new IOException("Failed to open port " + errorMessage.reinterpret(libC.strlen(errorMessage)));
             }
 
             MemorySegment tty = Termios.allocate(arena);
-            if (tcgetattr(fd, tty) != 0) {
+            if (libC.tcgetattr(fd, tty) != 0) {
                 throw new IOException("Failed to read existing settings");
             }
 
@@ -53,10 +55,10 @@ public class SerialLinuxChannel implements SerialChannel {
             Termios.c_cc(tty, VTIME, (byte) 10);
             Termios.c_cc(tty, VMIN, (byte) 0);
 
-            cfsetispeed(tty, B9600);
-            cfsetospeed(tty, B9600);
+            libC.cfsetispeed(tty, B9600);
+            libC.cfsetospeed(tty, B9600);
 
-            if (tcsetattr(fd, TCSANOW, tty) != 0) {
+            if (libC.tcsetattr(fd, TCSANOW, tty) != 0) {
                 throw new IOException("Failed set settings");
             }
         }
@@ -64,9 +66,9 @@ public class SerialLinuxChannel implements SerialChannel {
     }
 
     @Override
-    public int read(ByteBuffer dst) throws IOException {
+    public int read(ByteBuffer dst) {
         MemorySegment segment = Util.toMemorySegment(dst);
-        int read =  LibC.read(fd, segment, dst.remaining());
+        int read =  libC.read(fd, segment, dst.remaining());
 
         if (!dst.isDirect()) {
             // copy bytes back from native segment to Java buffer
@@ -80,10 +82,10 @@ public class SerialLinuxChannel implements SerialChannel {
     }
 
     @Override
-    public int write(ByteBuffer src) throws IOException {
+    public int write(ByteBuffer src) {
         MemorySegment segment = Util.toMemorySegment(src);
 
-        return LibC.write(fd, segment, src.remaining());
+        return libC.write(fd, segment, src.remaining());
     }
 
     @Override
@@ -92,7 +94,7 @@ public class SerialLinuxChannel implements SerialChannel {
     }
 
     @Override
-    public void close() throws IOException {
-        LibC.close(fd);
+    public void close() {
+        libC.close(fd);
     }
 }
