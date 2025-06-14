@@ -23,13 +23,12 @@ public class SerialLinuxChannel implements SerialChannel {
 
             fd = libC.open(arena.allocateFrom(portName, StandardCharsets.US_ASCII), O_RDWR);
             if (fd < 0) {
-                MemorySegment errorMessage = libC.strerror(libC.errno());
-                throw new IOException("Failed to open port " + errorMessage.reinterpret(libC.strlen(errorMessage)));
+                throw new IOException("Failed to open port :" + segmentToString(libC.strerror(libC.errno())) + " " + portName);
             }
 
             MemorySegment tty = Termios.allocate(arena);
             if (libC.tcgetattr(fd, tty) != 0) {
-                throw new IOException("Failed to read existing settings");
+                throw new IOException("Failed to read existing settings:" + segmentToString(libC.strerror(libC.errno())));
             }
 
             int c_cflag = Termios.c_cflag(tty);
@@ -59,16 +58,19 @@ public class SerialLinuxChannel implements SerialChannel {
             libC.cfsetospeed(tty, B9600);
 
             if (libC.tcsetattr(fd, TCSANOW, tty) != 0) {
-                throw new IOException("Failed set settings");
+                throw new IOException("Failed to set existing settings:" + segmentToString(libC.strerror(libC.errno())));
             }
         }
 
     }
 
     @Override
-    public int read(ByteBuffer dst) {
+    public int read(ByteBuffer dst) throws IOException {
         MemorySegment segment = Util.toMemorySegment(dst);
-        int read =  libC.read(fd, segment, dst.remaining());
+        int read = libC.read(fd, segment, dst.remaining());
+        if (read < 0) {
+            throw new IOException("Failed to read port: " + segmentToString(libC.strerror(libC.errno())));
+        }
 
         if (!dst.isDirect()) {
             // copy bytes back from native segment to Java buffer
@@ -82,10 +84,14 @@ public class SerialLinuxChannel implements SerialChannel {
     }
 
     @Override
-    public int write(ByteBuffer src) {
+    public int write(ByteBuffer src) throws IOException {
         MemorySegment segment = Util.toMemorySegment(src);
 
-        return libC.write(fd, segment, src.remaining());
+        int written = libC.write(fd, segment, src.remaining());
+        if (written < 0) {
+            throw new IOException("Failed to write to port:" + segmentToString(libC.strerror(libC.errno())));
+        }
+        return written;
     }
 
     @Override
@@ -94,7 +100,13 @@ public class SerialLinuxChannel implements SerialChannel {
     }
 
     @Override
-    public void close() {
-        libC.close(fd);
+    public void close() throws IOException {
+        if (libC.close(fd) < 0) {
+            throw new IOException("Failed to close port:" + segmentToString(libC.strerror(libC.errno())));
+        }
+    }
+
+    private String segmentToString(MemorySegment seg) {
+        return seg.reinterpret(libC.strlen(seg)).getString(0);
     }
 }

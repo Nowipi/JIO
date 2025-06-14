@@ -9,7 +9,7 @@ import io.github.nowipi.ffm.processor.Library;
 
 import java.lang.foreign.*;
 
-@Library("default")
+@Library
 interface LibC {
 
     int O_RDWR = 2;
@@ -32,6 +32,7 @@ interface LibC {
     @Function("open")
     int open(MemorySegment pathname, int flags);
 
+    @Capture("errno")
     @Function("tcgetattr")
     int tcgetattr(int fildes, MemorySegment termios_p);
 
@@ -41,6 +42,7 @@ interface LibC {
     @Function("cfsetospeed")
     int cfsetospeed(MemorySegment termios_p, int speed);
 
+    @Capture("errno")
     @Function("tcsetattr")
     int tcsetattr(int filedes, int optional_actions, MemorySegment termios_p);
 
@@ -52,6 +54,7 @@ interface LibC {
     @Function("write")
     int write(int fd, MemorySegment buf, int count);
 
+    @Capture("errno")
     @Function("close")
     int close(int fd);
 
